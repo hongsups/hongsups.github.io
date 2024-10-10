@@ -1,0 +1,75 @@
+---
+title: LLM architecture
+date: 2024-10-07
+description: Test
+image: None
+author: Hongsup Shin
+categories: 
+    - ML
+    - LLM
+---
+
+## What I need
+
+- High-level view: Revisit the encoder-decoder Transformer architecture, and more specifically the decoder-only GPT architecture, which is used in every modern LLM.
+- Tokenization: Understand how to convert raw text data into a format that the model can understand, which involves splitting the text into tokens (usually words or subwords).
+- Attention mechanisms: Grasp the theory behind attention mechanisms, including self-attention and scaled dot-product attention, which allows the model to focus on different parts of the input when producing an output.
+- Text generation: Learn about the different ways the model can generate output sequences. Common strategies include greedy decoding, beam search, top-k sampling, and nucleus sampling.
+
+## [Visualizing A Neural Machine Translation Model (Mechanics of Seq2seq Models With Attention)](https://jalammar.github.io/visualizing-neural-machine-translation-mechanics-of-seq2seq-models-with-attention/)
+
+### Sequence-to-sequence models
+- Google Translate started using it in 2016
+- [Sutskever et al., 2014](https://papers.nips.cc/paper/5346-sequence-to-sequence-learning-with-neural-networks.pdf), [Cho et al., 2014](http://emnlp2014.org/papers/pdf/EMNLP2014179.pdf)
+- Input and outputs are sequence of items
+- Example: neural machine translation
+
+### Encoder and decoder
+- Encoder processes each item in the input and create vectors (=context)
+- Once processing all inputs, the encoder sends the context to the decoder
+- Decoder produces the outcome sequence item by item
+- Encoder and decoder: RNNs
+- Context: vector -> hidden units in RNN (users can set this)
+- By design, RNN takes two inputs at a time
+  - 1. Input: one word from the input sentence (encoder)
+  - 2. Hidden state
+  - The words are represented as embeddings
+- RNN then produces two output vectors
+  - 1. Output
+  - 2. Next hidden state
+- Next, RNN takes the next input, and the hidden state from the previous step as input
+- Context is basically the hidden state that's updated after the encoder processes every word in the input sentence
+- Decoder also has hidden state (same as encoder cuz it's also an RNN)
+
+## Attention
+
+- The context vector is a bottleneck
+  - Difficult to deal with long sentences
+- Attention suggested
+  - [Bahdanau et al., 2014](https://arxiv.org/abs/1409.0473), [Luong et al., 2015](https://arxiv.org/abs/1508.04025)
+- The attention mechanism enables the decoder to focus on one of the input words
+- Attention is different than seq-2-seq in 2 ways
+  - 1. Encoder passes ALL the hidden states to the decoder (not just the last hidden state)
+  - 2. Decoder has an extra step before producing output
+    - 1. Look at the all hidden states from the encoder
+    - 2. Give each hidden state a score
+      - Done at each time step on the decoder side
+    - 3. Multiply each hidden state by its softmaxed score
+      - Amplify the states with high scores, and drown the states with lower scores
+    - 4. Sum up the weighted states, which become the context vector for the decoder
+- Everything together
+  - 1. The attention decoder RNN takes in the embedding of `<END>` token (the last input), and an initial decoder hidden state
+  - 2. The RNN processes the input (input + first hidden state), producing an output and a new hidden state vector (second hidden state); the output is discarded
+  - 3. Attention step: We use the encoder hidden states (all of them) and the new hidden state vector to calculate a context vector
+  - 4. Concatenate the context and the hidden sate
+  - 5. Pass the input to FF network (part of the model)
+  - 6. The output of the network becomes the new input vector of the next step
+  - 7. Repeat
+
+## Attention
+- Core concept
+  - Avoid the word by word concept
+  - Consider the context (all input words)
+  - Important because word meaning is different across sentences
+- Scaled dot product mechanism
+  - Not so much a bottleneck in LLM

@@ -10,7 +10,154 @@
 <atom:link href="https://hongsupshin.github.io/index.xml" rel="self" type="application/rss+xml"/>
 <description></description>
 <generator>quarto-1.5.57</generator>
-<lastBuildDate>Sat, 05 Oct 2024 05:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 07 Oct 2024 05:00:00 GMT</lastBuildDate>
+<item>
+  <title>LLM architecture</title>
+  <dc:creator>Hongsup Shin</dc:creator>
+  <link>https://hongsupshin.github.io/posts/2024-10-07/</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="what-i-need" class="level2">
+
+<ul>
+<li>High-level view: Revisit the encoder-decoder Transformer architecture, and more specifically the decoder-only GPT architecture, which is used in every modern LLM.</li>
+<li>Tokenization: Understand how to convert raw text data into a format that the model can understand, which involves splitting the text into tokens (usually words or subwords).</li>
+<li>Attention mechanisms: Grasp the theory behind attention mechanisms, including self-attention and scaled dot-product attention, which allows the model to focus on different parts of the input when producing an output.</li>
+<li>Text generation: Learn about the different ways the model can generate output sequences. Common strategies include greedy decoding, beam search, top-k sampling, and nucleus sampling.</li>
+</ul>
+</section>
+<section id="visualizing-a-neural-machine-translation-model-mechanics-of-seq2seq-models-with-attention" class="level2">
+<h2 class="anchored" data-anchor-id="visualizing-a-neural-machine-translation-model-mechanics-of-seq2seq-models-with-attention"><a href="https://jalammar.github.io/visualizing-neural-machine-translation-mechanics-of-seq2seq-models-with-attention/">Visualizing A Neural Machine Translation Model (Mechanics of Seq2seq Models With Attention)</a></h2>
+<section id="sequence-to-sequence-models" class="level3">
+<h3 class="anchored" data-anchor-id="sequence-to-sequence-models">Sequence-to-sequence models</h3>
+<ul>
+<li>Google Translate started using it in 2016</li>
+<li><a href="https://papers.nips.cc/paper/5346-sequence-to-sequence-learning-with-neural-networks.pdf">Sutskever et al., 2014</a>, <a href="http://emnlp2014.org/papers/pdf/EMNLP2014179.pdf">Cho et al., 2014</a></li>
+<li>Input and outputs are sequence of items</li>
+<li>Example: neural machine translation</li>
+</ul>
+</section>
+<section id="encoder-and-decoder" class="level3">
+<h3 class="anchored" data-anchor-id="encoder-and-decoder">Encoder and decoder</h3>
+<ul>
+<li>Encoder processes each item in the input and create vectors (=context)</li>
+<li>Once processing all inputs, the encoder sends the context to the decoder</li>
+<li>Decoder produces the outcome sequence item by item</li>
+<li>Encoder and decoder: RNNs</li>
+<li>Context: vector -&gt; hidden units in RNN (users can set this)</li>
+<li>By design, RNN takes two inputs at a time
+<ul>
+<li><ol type="1">
+<li>Input: one word from the input sentence (encoder)</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Hidden state</li>
+</ol></li>
+<li>The words are represented as embeddings</li>
+</ul></li>
+<li>RNN then produces two output vectors
+<ul>
+<li><ol type="1">
+<li>Output</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Next hidden state</li>
+</ol></li>
+</ul></li>
+<li>Next, RNN takes the next input, and the hidden state from the previous step as input</li>
+<li>Context is basically the hidden state that’s updated after the encoder processes every word in the input sentence</li>
+<li>Decoder also has hidden state (same as encoder cuz it’s also an RNN)</li>
+</ul>
+</section>
+</section>
+<section id="attention" class="level2">
+<h2 class="anchored" data-anchor-id="attention">Attention</h2>
+<ul>
+<li>The context vector is a bottleneck
+<ul>
+<li>Difficult to deal with long sentences</li>
+</ul></li>
+<li>Attention suggested
+<ul>
+<li><a href="https://arxiv.org/abs/1409.0473">Bahdanau et al., 2014</a>, <a href="https://arxiv.org/abs/1508.04025">Luong et al., 2015</a></li>
+</ul></li>
+<li>The attention mechanism enables the decoder to focus on one of the input words</li>
+<li>Attention is different than seq-2-seq in 2 ways
+<ul>
+<li><ol type="1">
+<li>Encoder passes ALL the hidden states to the decoder (not just the last hidden state)</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Decoder has an extra step before producing output</li>
+</ol>
+<ul>
+<li><ol type="1">
+<li>Look at the all hidden states from the encoder</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>Give each hidden state a score</li>
+</ol>
+<ul>
+<li>Done at each time step on the decoder side</li>
+</ul></li>
+<li><ol start="3" type="1">
+<li>Multiply each hidden state by its softmaxed score</li>
+</ol>
+<ul>
+<li>Amplify the states with high scores, and drown the states with lower scores</li>
+</ul></li>
+<li><ol start="4" type="1">
+<li>Sum up the weighted states, which become the context vector for the decoder</li>
+</ol></li>
+</ul></li>
+</ul></li>
+<li>Everything together
+<ul>
+<li><ol type="1">
+<li>The attention decoder RNN takes in the embedding of <code>&lt;END&gt;</code> token (the last input), and an initial decoder hidden state</li>
+</ol></li>
+<li><ol start="2" type="1">
+<li>The RNN processes the input (input + first hidden state), producing an output and a new hidden state vector (second hidden state); the output is discarded</li>
+</ol></li>
+<li><ol start="3" type="1">
+<li>Attention step: We use the encoder hidden states (all of them) and the new hidden state vector to calculate a context vector</li>
+</ol></li>
+<li><ol start="4" type="1">
+<li>Concatenate the context and the hidden sate</li>
+</ol></li>
+<li><ol start="5" type="1">
+<li>Pass the input to FF network (part of the model)</li>
+</ol></li>
+<li><ol start="6" type="1">
+<li>The output of the network becomes the new input vector of the next step</li>
+</ol></li>
+<li><ol start="7" type="1">
+<li>Repeat</li>
+</ol></li>
+</ul></li>
+</ul>
+</section>
+<section id="attention-scoring" class="level2">
+<h2 class="anchored" data-anchor-id="attention-scoring">Attention scoring</h2>
+<ul>
+<li>Self-Attention</li>
+<li></li>
+</ul>
+
+
+</section>
+
+ ]]></description>
+  <category>ML</category>
+  <category>LLM</category>
+  <guid>https://hongsupshin.github.io/posts/2024-10-07/</guid>
+  <pubDate>Mon, 07 Oct 2024 05:00:00 GMT</pubDate>
+  <media:content url="https://hongsupshin.github.io/posts/2024-10-07/None" medium="image"/>
+</item>
 <item>
   <title>Building datasets for model benchmarking in production</title>
   <dc:creator>Hongsup Shin</dc:creator>
