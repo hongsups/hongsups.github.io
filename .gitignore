@@ -1,4 +1,4 @@
 /.quarto/
 /_site/
 *.code-workspace
-.ipynb_checkpoints
+.ipynb_checkpoints/
